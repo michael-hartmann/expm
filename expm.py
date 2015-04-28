@@ -3,8 +3,8 @@
 from __future__ import division
 from math import ceil,log
 import numpy as np
-from scipy import linalg
 
+# table 10.4
 b_d = {
     3:  [120,60,12,1],
     5:  [30240,15120,3360,420,30,1],
@@ -13,6 +13,7 @@ b_d = {
     13: [64764752532480000,32382376266240000,7771770303897600,1187353796428800,129060195264000,10559470521600,670442572800,33522128640,1323241920,40840800,960960,16380,182,1]
 }
 
+# table 10.2
 theta3  = 1.5e-2
 theta5  = 2.5e-1
 theta7  = 9.5e-1
@@ -20,7 +21,6 @@ theta9  = 2.1e-1
 theta13 = 5.4e0
 
 
-# M is odd
 def _expm_pade3579(A,M):
     dim,dim = A.shape
     b = b_d[M]
@@ -47,6 +47,7 @@ def _expm_pade3579(A,M):
 
 
 def _expm_ss(A,norm):
+    # algorithm 10.20, from line 7
     dim,dim = A.shape
     b = b_d[13]
 
@@ -69,6 +70,14 @@ def _expm_ss(A,norm):
 
 
 def expm(A):
+    """
+    Calculate the matrix exponential of a square matrix A: MatrixExp(A)
+
+    This module implements the algorithm 10.20 from [1]. The matrix exponential
+    is calculated using scaling and squaring, and a Pade approximation.
+
+    [1] Functions of Matrices: Theory and Computation, Nicholas J. Higham, 2008
+    """
     rows, columns = A.shape
     if rows != columns:
         raise BaseException("A must be a square matrix")
@@ -89,6 +98,7 @@ def expm(A):
 
 
 if __name__ == "__main__":
+    from scipy import linalg
     A = np.array([[1,2],[3,4]])
     print "norm A", np.linalg.norm(A, ord=1)
     print
