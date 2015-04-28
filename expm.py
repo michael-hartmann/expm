@@ -12,29 +12,25 @@ b_d = {
     13: [64764752532480000,32382376266240000,7771770303897600,1187353796428800,129060195264000,10559470521600,670442572800,33522128640,1323241920,40840800,960960,16380,182,1]
 }
 
+theta3 = 1.5e-2
+theta5 = 2.5e-1
+theta7 = 9.5e-1
 
 
-def _expm_pade(A,m):
-    pass
-
-def expm(A):
-    rows, columns = A.shape
-    if rows != columns:
-        raise BaseException("A must be square matrix")
-    dim = rows
-
-    # calculate the norm of A
-    norm = np.linalg.norm(A)
-
-    M = 7
+# M is odd
+def _expm_pade(A,M):
+    dim,dim = A.shape
     b = b_d[M]
 
     U = b[1]*np.eye(dim)
-    for m in range(3,M+1+1,2):
+    V = b[0]*np.eye(dim)
+
+    # evaluate (10.33)
+    for m in range(3,M+1,2):
+        print m
         U += b[m]*np.linalg.matrix_power(A,m-1)
     U = np.dot(A,U)
 
-    V = b[0]*np.eye(dim)
     for m in range(2,M+1,2):
         V += b[m]*np.linalg.matrix_power(A,m)
 
@@ -44,6 +40,24 @@ def expm(A):
     inv = np.linalg.inv(VmU)
 
     return np.dot(inv, VpU)
+
+
+def expm(A):
+    rows, columns = A.shape
+    if rows != columns:
+        raise BaseException("A must be square matrix")
+
+    # calculate the norm of A
+    norm = np.linalg.norm(A)
+
+    if   norm < theta3:
+        return _expm_pade(A,3)
+    elif norm < theta5:
+        return _expm_pade(A,5)
+    elif norm < theta7:
+        return _expm_pade(A,7)
+    else:
+        raise BaseException("Not implemented yet")
 
 
 if __name__ == "__main__":
