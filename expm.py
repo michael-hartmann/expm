@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from __future__ import division
+from math import ceil,log
 import numpy as np
 from scipy import linalg
 
@@ -12,27 +13,30 @@ b_d = {
     13: [64764752532480000,32382376266240000,7771770303897600,1187353796428800,129060195264000,10559470521600,670442572800,33522128640,1323241920,40840800,960960,16380,182,1]
 }
 
-theta3 = 1.5e-2
-theta5 = 2.5e-1
-theta7 = 9.5e-1
+theta3  = 1.5e-2
+theta5  = 2.5e-1
+theta7  = 9.5e-1
+theta9  = 2.1e-1
+theta13 = 5.4e0
 
 
 # M is odd
-def _expm_pade(A,M):
+def _expm_pade3579(A,M):
     dim,dim = A.shape
     b = b_d[M]
 
     U = b[1]*np.eye(dim)
     V = b[0]*np.eye(dim)
 
-    # evaluate (10.33)
-    for m in range(3,M+1,2):
-        print m
-        U += b[m]*np.linalg.matrix_power(A,m-1)
-    U = np.dot(A,U)
+    A2 = np.dot(A,A)
+    A2n = np.eye(dim)
 
-    for m in range(2,M+1,2):
-        V += b[m]*np.linalg.matrix_power(A,m)
+    # evaluate (10.33)
+    for i in range(1,M//2+1):
+        A2n = np.dot(A2n,A2)
+        U += b[2*i+1]*A2n
+        V += b[2*i]  *A2n
+    U = np.dot(A,U)
 
     VpU = V+U
     VmU = V-U
@@ -42,27 +46,51 @@ def _expm_pade(A,M):
     return np.dot(inv, VpU)
 
 
+def _expm_ss(A,norm):
+    dim,dim = A.shape
+    b = b_d[13]
+
+    s = int(ceil(log(norm/theta13)/log(2)))
+    A = A/2**s
+
+    A2 = np.dot(A,A)
+    A4 = np.dot(A2,A2)
+    A6 = np.dot(A2,A4)
+
+    U = np.dot(A, np.dot(A6, b[13]*A6+b[11]*A4+b[9]*A2)+b[7]*A6+b[5]*A4+b[3]*A2+b[1]*np.eye(dim))
+    V = np.dot(A6, b[12]*A6+b[10]*A4+b[8]*A2) + b[6]*A6 + b[4]*A4 + b[2]*A2 + b[0]*np.eye(dim)
+
+    VpU = V+U
+    VmU = V-U
+    inv = np.linalg.inv(VmU)
+
+    r13 = np.dot(inv, VpU)
+    return np.linalg.matrix_power(r13, 2**s)
+
+
 def expm(A):
     rows, columns = A.shape
     if rows != columns:
-        raise BaseException("A must be square matrix")
+        raise BaseException("A must be a square matrix")
 
     # calculate the norm of A
-    norm = np.linalg.norm(A)
+    norm = np.linalg.norm(A, ord=1)
 
     if   norm < theta3:
-        return _expm_pade(A,3)
+        return _expm_pade3579(A,3)
     elif norm < theta5:
-        return _expm_pade(A,5)
+        return _expm_pade3579(A,5)
     elif norm < theta7:
-        return _expm_pade(A,7)
+        return _expm_pade3579(A,7)
+    elif norm < theta9:
+        return _expm_pade3579(A,9)
     else:
-        raise BaseException("Not implemented yet")
+        return _expm_ss(A,norm)
 
 
 if __name__ == "__main__":
-    A = np.array([[1,2],[3,4]])/6
-    print "norm A", np.linalg.norm(A)
+    A = np.array([[1,2],[3,4]])
+    print "norm A", np.linalg.norm(A, ord=1)
     print
     X_scipy = linalg.expm(A)
     X_expm  = expm(A)
@@ -70,6 +98,4 @@ if __name__ == "__main__":
     print
     print "expm ", X_expm
     print
-    print "diff ", X_expm-X_scipy, np.linalg.norm(X_expm-X_scipy)
-
-    
+    print "diff ", X_expm-X_scipy, np.linalg.norm(X_expm-X_scipy, ord=1)
