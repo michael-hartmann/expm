@@ -17,7 +17,7 @@ b_d = {
 theta3  = 1.5e-2
 theta5  = 2.5e-1
 theta7  = 9.5e-1
-theta9  = 2.1e-1
+theta9  = 2.1e0
 theta13 = 5.4e0
 
 
