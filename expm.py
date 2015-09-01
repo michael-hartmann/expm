@@ -37,12 +37,19 @@ def _expm_pade(A,M):
         A2n = np.dot(A2n,A2)
         U += b[2*i+1]*A2n
         V += b[2*i]  *A2n
+
+    del A2,A2n
+
     U = np.dot(A,U)
 
     VpU = V+U
     VmU = V-U
 
+    del A,U,V
+
     inv = np.linalg.inv(VmU)
+
+    del VmU
 
     return np.dot(inv, VpU)
 
@@ -55,18 +62,26 @@ def _expm_ss(A,norm):
     s = int(ceil(log(norm/theta13)/log(2)))
     A = A/2**s
 
+    Id = np.eye(dim)
     A2 = np.dot(A,A)
     A4 = np.dot(A2,A2)
     A6 = np.dot(A2,A4)
 
-    U = np.dot(A, np.dot(A6, b[13]*A6+b[11]*A4+b[9]*A2)+b[7]*A6+b[5]*A4+b[3]*A2+b[1]*np.eye(dim))
-    V = np.dot(A6, b[12]*A6+b[10]*A4+b[8]*A2) + b[6]*A6 + b[4]*A4 + b[2]*A2 + b[0]*np.eye(dim)
+    U = np.dot(A, np.dot(A6, b[13]*A6+b[11]*A4+b[9]*A2)+b[7]*A6+b[5]*A4+b[3]*A2+b[1]*Id)
+    V = np.dot(A6, b[12]*A6+b[10]*A4+b[8]*A2) + b[6]*A6 + b[4]*A4 + b[2]*A2 + b[0]*Id
+
+    del A,Id,A2,A4,A6
 
     VpU = V+U
     VmU = V-U
     inv = np.linalg.inv(VmU)
 
+    del VmU,V,U
+
     r13 = np.dot(inv, VpU)
+
+    del VpU
+
     return np.linalg.matrix_power(r13, 2**s)
 
 
@@ -74,8 +89,8 @@ def expm(A):
     """
     Calculate the matrix exponential of a square matrix A: MatrixExp(A)
 
-    This module implements the algorithm 10.20 from [1]. The matrix exponential
-    is calculated using scaling and squaring, and a Pade approximation.
+    This module implements algorithm 10.20 from [1]. The matrix exponential is
+    calculated using scaling and squaring, and a Pade approximation.
 
     [1] Functions of Matrices: Theory and Computation, Nicholas J. Higham, 2008
     """
