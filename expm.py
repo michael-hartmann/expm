@@ -22,14 +22,15 @@ theta13 = 5.4e0
 
 
 def _expm_pade(A,M):
+    dtype = A.dtype
     dim,dim = A.shape
     b = b_d[M]
 
-    U = b[1]*np.eye(dim)
-    V = b[0]*np.eye(dim)
+    U = b[1]*np.eye(dim, dtype=dtype)
+    V = b[0]*np.eye(dim, dtype=dtype)
 
     A2 = np.dot(A,A)
-    A2n = np.eye(dim)
+    A2n = np.eye(dim, dtype=dtype)
 
     # evaluate (10.33)
     for i in range(1,M//2+1):
