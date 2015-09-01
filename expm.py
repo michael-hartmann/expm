@@ -21,7 +21,7 @@ theta9  = 2.1e0
 theta13 = 5.4e0
 
 
-def _expm_pade3579(A,M):
+def _expm_pade(A,M):
     dim,dim = A.shape
     b = b_d[M]
 
@@ -86,13 +86,15 @@ def expm(A):
     norm = np.linalg.norm(A, ord=1)
 
     if   norm < theta3:
-        return _expm_pade3579(A,3)
+        return _expm_pade(A,3)
     elif norm < theta5:
-        return _expm_pade3579(A,5)
+        return _expm_pade(A,5)
     elif norm < theta7:
-        return _expm_pade3579(A,7)
+        return _expm_pade(A,7)
     elif norm < theta9:
-        return _expm_pade3579(A,9)
+        return _expm_pade(A,9)
+    elif norm < theta13:
+        return _expm_pade(A,13)
     else:
         return _expm_ss(A,norm)
 
