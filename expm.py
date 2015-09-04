@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from __future__ import division
+from __future__ import division, print_function
 from math import ceil,log
 import numpy as np
 
@@ -39,19 +39,9 @@ def _expm_pade(A,M):
         V += b[2*i]  *A2n
 
     del A2,A2n
-
     U = np.dot(A,U)
 
-    VpU = V+U
-    VmU = V-U
-
-    del A,U,V
-
-    inv = np.linalg.inv(VmU)
-
-    del VmU
-
-    return np.dot(inv, VpU)
+    return np.linalg.solve(V-U, V+U)
 
 
 def _expm_ss(A,norm):
@@ -59,8 +49,9 @@ def _expm_ss(A,norm):
     dim,dim = A.shape
     b = b_d[13]
 
-    s = int(ceil(log(norm/theta13)/log(2)))
-    A = A/2**s
+    s = max(0, int(ceil(log(norm/theta13)/log(2))))
+    if s > 0:
+        A /= 2**s
 
     Id = np.eye(dim)
     A2 = np.dot(A,A)
@@ -72,15 +63,9 @@ def _expm_ss(A,norm):
 
     del A,Id,A2,A4,A6
 
-    VpU = V+U
-    VmU = V-U
-    inv = np.linalg.inv(VmU)
+    r13 = np.linalg.solve(V-U, V+U)
 
-    del VmU,V,U
-
-    r13 = np.dot(inv, VpU)
-
-    del VpU
+    del V,U
 
     return np.linalg.matrix_power(r13, 2**s)
 
@@ -109,21 +94,28 @@ def expm(A):
         return _expm_pade(A,7)
     elif norm < theta9:
         return _expm_pade(A,9)
-    elif norm < theta13:
-        return _expm_pade(A,13)
     else:
         return _expm_ss(A,norm)
 
 
 if __name__ == "__main__":
+    from time import time
     from scipy import linalg
-    A = np.array([[1,2],[3,4]])
-    print "norm A", np.linalg.norm(A, ord=1)
-    print
+    A = np.random.random((2000,2000))/10
+
+    print("norm ", np.linalg.norm(A, ord=1))
+
+    t = time()
     X_scipy = linalg.expm(A)
+    t = time()-t
+    print("scipy", t)
+
+    print()
+
+    t = time()
     X_expm  = expm(A)
-    print "scipy", X_scipy
-    print
-    print "expm ", X_expm
-    print
-    print "diff ", X_expm-X_scipy, np.linalg.norm(X_expm-X_scipy, ord=1)
+    t = time()-t
+    print("expm ", t)
+    print()
+    print("diff ", np.linalg.norm(X_expm-X_scipy, ord=1))
+    print("diff ", np.linalg.norm(X_expm-X_scipy, ord=1)/np.linalg.norm(X_scipy))
